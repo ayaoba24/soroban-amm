@@ -47,6 +47,9 @@ impl MockV3Pool {
 
     /// Pull amount_a + amount_b from `provider` (the migration contract) and
     /// return a fixed synthetic position ID so the migration can proceed.
+    // Mirrors the real V3PoolInterface::add_liquidity_range signature the
+    // migration contract calls, which is not ours to slim down.
+    #[allow(clippy::too_many_arguments)]
     pub fn add_liquidity_range(
         env: Env,
         provider: Address,
@@ -88,14 +91,12 @@ impl MockV3Pool {
 // ── Test fixture ──────────────────────────────────────────────────────────────
 
 struct Fixture<'a> {
-    env: Env,
     lp: Address,
     token_a: TokenClient<'a>,
     token_b: TokenClient<'a>,
     token_a_sac: StellarAssetClient<'a>,
     token_b_sac: StellarAssetClient<'a>,
     v2_lp: LpTokenClient<'a>,
-    v2: AmmPoolClient<'a>,
     migration: MigrationContractClient<'a>,
 }
 
@@ -157,14 +158,12 @@ impl<'a> Fixture<'a> {
         migration.initialize(&admin, &v2_addr, &v3_addr);
 
         Fixture {
-            env: env.clone(),
             lp,
             token_a: ta,
             token_b: tb,
             token_a_sac: ta_sac,
             token_b_sac: tb_sac,
             v2_lp: LpTokenClient::new(env, &v2_lp_addr),
-            v2,
             migration,
         }
     }

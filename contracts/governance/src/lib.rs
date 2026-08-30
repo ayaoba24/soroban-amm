@@ -896,8 +896,7 @@ impl Governance {
                 // the proposal cannot be marked executed while pools remain
                 // untouched.
                 let pool_count: u64 = factory_client.get_pool_count();
-                let window_end: u64 = (params.offset as u64)
-                    .saturating_add(params.limit as u64);
+                let window_end: u64 = (params.offset as u64).saturating_add(params.limit as u64);
                 // Both conditions must hold:
                 //  - offset == 0: the window starts from the first pool
                 //  - window_end >= pool_count: the window reaches the last pool
@@ -1540,7 +1539,6 @@ mod tests {
         gov_addr: Address,
         lp_addr: Address,
         amm_addr: Address,
-        admin: Address,
     }
 
     fn setup_suite(initial_fee_bps: i128) -> Suite {
@@ -1597,7 +1595,6 @@ mod tests {
             gov_addr,
             lp_addr,
             amm_addr,
-            admin,
         }
     }
 
@@ -2583,7 +2580,7 @@ mod tests {
         cl_addr
     }
 
-    fn setup_gov(env: &Env) -> (GovernanceClient, Address, Address) {
+    fn setup_gov(env: &Env) -> (GovernanceClient<'_>, Address, Address) {
         let admin = Address::generate(env);
         let lp_addr = env.register_contract(None, LpToken);
         token::LpTokenClient::new(env, &lp_addr).initialize(
@@ -2851,7 +2848,9 @@ mod tests {
     impl MockFactory {
         /// Store the pool count that this mock should report.
         pub fn set_pool_count(env: Env, count: u64) {
-            env.storage().instance().set(&Symbol::new(&env, "count"), &count);
+            env.storage()
+                .instance()
+                .set(&Symbol::new(&env, "count"), &count);
         }
 
         /// Return the number of pools set via `set_pool_count`.
@@ -2863,7 +2862,12 @@ mod tests {
         }
 
         /// Record that this was called so tests can assert it ran.
-        pub fn set_global_fee_paginated(env: Env, _admin: Address, _offset: u32, limit: u32) -> u32 {
+        pub fn set_global_fee_paginated(
+            env: Env,
+            _admin: Address,
+            _offset: u32,
+            limit: u32,
+        ) -> u32 {
             let prev: u32 = env
                 .storage()
                 .instance()
@@ -2902,10 +2906,10 @@ mod tests {
     }
 
     impl FactoryGovSuite {
-        fn gov(&self) -> GovernanceClient {
+        fn gov(&self) -> GovernanceClient<'_> {
             GovernanceClient::new(&self.env, &self.gov_addr)
         }
-        fn factory(&self) -> MockFactoryClient {
+        fn factory(&self) -> MockFactoryClient<'_> {
             MockFactoryClient::new(&self.env, &self.factory_addr)
         }
     }
@@ -2964,7 +2968,12 @@ mod tests {
         let proposer = Address::generate(&env);
         token::LpTokenClient::new(&env, &lp_addr).mint(&proposer, &1_000_i128);
 
-        FactoryGovSuite { env, gov_addr, proposer, factory_addr }
+        FactoryGovSuite {
+            env,
+            gov_addr,
+            proposer,
+            factory_addr,
+        }
     }
 
     /// propose() must reject a proposal with limit == 0.
@@ -3233,7 +3242,7 @@ mod prop_tests {
         fn zero_timelock_property(
             vote_end in 0u64..u64::MAX / 2,
         ) {
-            let execute_after = vote_end + 0;
+            let execute_after = vote_end;
             prop_assert_eq!(execute_after, vote_end);
         }
     }
@@ -3345,7 +3354,7 @@ mod prop_tests {
                 }
 
                 let delegatee = if (delegatee_idx as usize) < n {
-                    (delegatee_idx as usize)
+                    delegatee_idx as usize
                 } else {
                     0
                 };
@@ -3485,7 +3494,7 @@ mod prop_tests {
                 );
 
                 if can_unlock {
-                    for (i, amt) in voters.iter().enumerate() {
+                    for (i, _amt) in voters.iter().enumerate() {
                         let locked_before = lp.locked_balance(&holders[i]);
                         if locked_before > 0 {
                             if gov.try_unlock_vote(&holders[i], &pid).is_ok() {
@@ -3675,15 +3684,13 @@ mod prop_tests {
                 );
 
                 if can_unlock {
-                    let mut total_locked_before: i128 = 0;
                     let mut total_locked_after: i128 = 0;
 
-                    for (i, (amt, _)) in voters.iter().enumerate() {
+                    for (i, (_amt, _)) in voters.iter().enumerate() {
                         let locked_before = lp.locked_balance(&holders[i]);
-                        total_locked_before += locked_before;
                         if locked_before > 0 {
                             // Balance before unlock = balance - locked (locked unavailable for transfer).
-                            let bal_before = lp.balance(&holders[i]);
+                            let _bal_before = lp.balance(&holders[i]);
 
                             let _ = gov.try_unlock_vote(&holders[i], &pid);
 

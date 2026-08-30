@@ -15,8 +15,7 @@
 
 #![no_std]
 
-use amm::AmmPoolClient;
-use concentrated_liquidity::ConcentratedLiquidityClient;
+use pool_interfaces::{AmmPoolClient, ConcentratedLiquidityClient};
 use soroban_sdk::token::Client as SepTokenClient;
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec,
@@ -160,6 +159,9 @@ impl BatchAuction {
     /// is validated here so a mismatched order can never reach `settle_batch`.
     ///
     /// Returns the new order ID.
+    // Every parameter is required contract-call input; splitting it into a
+    // struct would just move the same 8 fields onto the caller's ABI.
+    #[allow(clippy::too_many_arguments)]
     pub fn submit_order(
         env: Env,
         trader: Address,
@@ -404,7 +406,7 @@ impl BatchAuction {
     ///
     /// Returns the output amounts for each order that settled successfully,
     /// in submission order. Orders that failed and were refunded are omitted;
-    /// callers should compare against [`get_pending_orders`] before and after
+    /// callers should compare against `get_pending_orders` before and after
     /// to see which orders failed, and use `order_failed` events to react.
     pub fn settle_batch(env: Env) -> Result<Vec<i128>, AuctionError> {
         let opened_at: u64 = env
@@ -838,7 +840,7 @@ impl BatchAuction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use amm::AmmPool;
+    use amm::{AmmPool, AmmPoolClient};
     use concentrated_liquidity::{ConcentratedLiquidity, ConcentratedLiquidityClient};
     use soroban_sdk::{
         testutils::{Address as _, Ledger},

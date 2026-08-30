@@ -595,7 +595,10 @@ mod tests {
 
         // At the cliff exactly: nothing has accrued yet — no lump-sum unlock.
         s.env.ledger().set_sequence_number(200);
-        let err = client.try_release(&s.beneficiary, &schedule_id).unwrap_err().unwrap();
+        let err = client
+            .try_release(&s.beneficiary, &schedule_id)
+            .unwrap_err()
+            .unwrap();
         assert_eq!(err, VestingError::NothingToRelease);
 
         // Halfway between cliff (200) and end (400): 50% vested.
@@ -607,7 +610,10 @@ mod tests {
         s.env.ledger().set_sequence_number(400);
         let released = client.release(&s.beneficiary, &schedule_id);
         assert_eq!(released, 500_000);
-        assert_eq!(client.get_vesting(&s.beneficiary, &schedule_id).released, 1_000_000);
+        assert_eq!(
+            client.get_vesting(&s.beneficiary, &schedule_id).released,
+            1_000_000
+        );
     }
 
     #[test]
@@ -707,10 +713,7 @@ mod tests {
         let new_treasury = Address::generate(&s.env);
 
         client.propose_treasury(&s.governance, &new_treasury);
-        assert_eq!(
-            client.get_pending_treasury(),
-            Some(new_treasury.clone())
-        );
+        assert_eq!(client.get_pending_treasury(), Some(new_treasury.clone()));
 
         client.accept_treasury(&new_treasury);
         assert_eq!(client.get_treasury(), new_treasury);

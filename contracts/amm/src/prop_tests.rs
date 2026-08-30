@@ -277,7 +277,10 @@ fn test_emergency_withdraw_zeros_total_shares_and_allows_redeposit() {
     ta_sac.mint(&new_provider, &2_000_000_i128);
     tb_sac.mint(&new_provider, &1_000_000_i128);
     let shares = AddLiquidity::new(&amm, &new_provider, 2_000_000, 1_000_000).execute();
-    assert!(shares > 0, "re-deposit after emergency_withdraw must mint shares");
+    assert!(
+        shares > 0,
+        "re-deposit after emergency_withdraw must mint shares"
+    );
 
     let info_final = amm.get_info();
     assert!(info_final.reserve_a > 0);
@@ -339,7 +342,10 @@ fn test_multisig_emergency_wd_zeros_total_shares_and_allows_redeposit() {
     ta_sac.mint(&new_provider, &2_000_000_i128);
     tb_sac.mint(&new_provider, &1_000_000_i128);
     let shares = AddLiquidity::new(&amm, &new_provider, 2_000_000, 1_000_000).execute();
-    assert!(shares > 0, "re-deposit after multisig emergency_wd must mint shares");
+    assert!(
+        shares > 0,
+        "re-deposit after multisig emergency_wd must mint shares"
+    );
 }
 
 #[test]

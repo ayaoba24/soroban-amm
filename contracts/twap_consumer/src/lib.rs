@@ -469,49 +469,6 @@ mod tests {
         )
     }
 
-    fn setup_pool_and_consumer<'a>(
-        env: &'a Env,
-        admin: &Address,
-        reserve_a: i128,
-        reserve_b: i128,
-    ) -> (Address, TwapConsumerClient<'a>) {
-        let amm_addr = env.register_contract(None, AmmPool);
-        let lp_addr = env.register_contract(None, LpToken);
-        let consumer_addr = env.register_contract(None, TwapConsumer);
-
-        token::LpTokenClient::new(env, &lp_addr).initialize(
-            &amm_addr,
-            &soroban_sdk::String::from_str(env, "AMM LP Token"),
-            &soroban_sdk::String::from_str(env, "ALP"),
-            &7u32,
-        );
-
-        let (ta, ta_sac) = create_sac(env, admin);
-        let (tb, tb_sac) = create_sac(env, admin);
-
-        let amm = AmmPoolClient::new(env, &amm_addr);
-        amm.initialize(
-            admin,
-            &ta.address,
-            &tb.address,
-            &lp_addr,
-            &30_i128,
-            admin,
-            &0_i128,
-        );
-
-        let provider = Address::generate(env);
-        ta_sac.mint(&provider, &reserve_a);
-        tb_sac.mint(&provider, &reserve_b);
-        amm.add_liquidity(&provider, &reserve_a, &reserve_b, &0_i128, &u64::MAX);
-
-        let consumer = TwapConsumerClient::new(env, &consumer_addr);
-        consumer.initialize(admin);
-        consumer.save_snapshot(&amm_addr);
-
-        (amm_addr, consumer)
-    }
-
     #[test]
     fn test_get_twap_price_diverges_from_spot_after_large_trade() {
         let env = Env::default();

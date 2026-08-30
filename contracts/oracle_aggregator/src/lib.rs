@@ -158,7 +158,7 @@ impl OracleAggregator {
             panic_with_error!(&env, OracleError::SourceNotFound);
         }
 
-        if new_sources.len() < MIN_VALID_SOURCES {
+        if new_sources.is_empty() {
             panic_with_error!(&env, OracleError::InsufficientSources);
         }
 
@@ -244,7 +244,7 @@ impl OracleAggregator {
             updated.push_back(source);
         }
 
-        if persist_sources && !stale_sources.is_empty() {
+        if !stale_sources.is_empty() {
             env.events()
                 .publish((symbol_short!("stale_src"),), (stale_sources,));
         }
@@ -279,7 +279,7 @@ impl OracleAggregator {
             }
         }
 
-        if persist_sources && !deviant_sources.is_empty() {
+        if !deviant_sources.is_empty() {
             env.events()
                 .publish((symbol_short!("deviant"),), (deviant_sources,));
         }

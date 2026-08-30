@@ -2760,7 +2760,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'attempt to multiply with overflow' from contract function 'Symbol(obj#929)'"
+                  "string": "caught panic 'attempt to multiply with overflow' from contract function 'Symbol(obj#933)'"
                 },
                 {
                   "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"

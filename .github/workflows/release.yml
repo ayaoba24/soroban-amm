@@ -13,7 +13,7 @@ jobs:
     name: Build and publish contract artifacts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32v1-none
@@ -49,7 +49,7 @@ jobs:
           } > CHANGELOG.md.tmp
           mv CHANGELOG.md.tmp CHANGELOG.md
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           body_path: CHANGELOG.md

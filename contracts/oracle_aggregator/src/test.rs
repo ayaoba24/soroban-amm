@@ -1,9 +1,6 @@
-#![cfg(test)]
-
 extern crate std;
 
 use soroban_sdk::{
-    contract, contractimpl,
     testutils::{Address as _, Ledger, LedgerInfo},
     Address, Env,
 };
@@ -16,32 +13,34 @@ use super::*;
 // every test. `quote()` reads a per-instance `price` from storage so
 // individual tests can dial each source independently.
 
-#[contract]
-struct MockAdapter;
+mod mock_adapter {
+    use soroban_sdk::{contract, contractimpl, Address, Env};
 
-const PRICE_KEY: &str = "price";
+    #[contract]
+    pub struct MockAdapter;
 
-#[contractimpl]
-impl MockAdapter {
-    pub fn set_price(env: Env, price: i128) {
-        env.storage()
-            .instance()
-            .set(&soroban_sdk::symbol_short!("price"), &price);
-    }
+    #[contractimpl]
+    impl MockAdapter {
+        pub fn set_price(env: Env, price: i128) {
+            env.storage()
+                .instance()
+                .set(&soroban_sdk::symbol_short!("price"), &price);
+        }
 
-    pub fn quote(env: Env, _token_a: Address, _token_b: Address) -> (i128, u64) {
-        let price: i128 = env
-            .storage()
-            .instance()
-            .get(&soroban_sdk::symbol_short!("price"))
-            .unwrap_or(0);
-        // Report the current ledger time so a configured (price > 0) source is fresh.
-        (price, env.ledger().timestamp())
+        pub fn quote(env: Env, _token_a: Address, _token_b: Address) -> (i128, u64) {
+            let price: i128 = env
+                .storage()
+                .instance()
+                .get(&soroban_sdk::symbol_short!("price"))
+                .unwrap_or(0);
+            // Report the current ledger time so a configured (price > 0) source is fresh.
+            (price, env.ledger().timestamp())
+        }
     }
 }
+use mock_adapter::{MockAdapter, MockAdapterClient};
 
 struct Harness<'a> {
-    env: Env,
     aggregator: OracleAggregatorClient<'a>,
     admin: Address,
     token_a: Address,
@@ -57,7 +56,6 @@ fn deploy(env: &Env, max_staleness: u64) -> Harness<'_> {
     let token_a = Address::generate(env);
     let token_b = Address::generate(env);
     Harness {
-        env: env.clone(),
         aggregator,
         admin,
         token_a,
@@ -72,20 +70,24 @@ fn deploy_source(env: &Env, price: i128) -> Address {
     id
 }
 
-#[contract]
-struct PanickingMockAdapter;
+mod panicking_mock_adapter {
+    use soroban_sdk::{contract, contractimpl, Address, Env};
 
-#[contractimpl]
-impl PanickingMockAdapter {
-    pub fn quote(_env: Env, _token_a: Address, _token_b: Address) -> (i128, u64) {
-        panic!("simulated source panic");
+    #[contract]
+    pub struct PanickingMockAdapter;
+
+    #[contractimpl]
+    impl PanickingMockAdapter {
+        pub fn quote(_env: Env, _token_a: Address, _token_b: Address) -> (i128, u64) {
+            panic!("simulated source panic");
+        }
     }
 }
+use panicking_mock_adapter::PanickingMockAdapter;
 
 fn deploy_panicking_source(env: &Env) -> Address {
     env.register_contract(None, PanickingMockAdapter)
 }
-
 
 fn set_now(env: &Env, ts: u64) {
     env.ledger().set(LedgerInfo {
@@ -546,4 +548,3 @@ fn panicking_source_is_skipped_and_does_not_abort_aggregation() {
     assert_eq!(result.price, 101);
     assert_eq!(result.confidence, 2);
 }
-

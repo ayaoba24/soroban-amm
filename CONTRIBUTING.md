@@ -94,13 +94,22 @@ benchmarks), `examples/` (TypeScript & Python clients), and `docs/`.
 Common tasks are wrapped in the `Makefile`:
 
 ```bash
+make help       # list every target with a one-line description (default goal)
 make build      # cargo build --release --target wasm32v1-none
-make test       # build, then run the full test suite
+make optimize   # optimize every WASM artifact from `make build` via the Stellar CLI
+make test       # build, then run the default-members test suite
+make test-all   # run tests for the whole workspace, bypassing default-members
 make fmt        # cargo fmt --all
 make lint       # cargo clippy --all -- -D warnings
-make check      # fmt + lint + test (run this before pushing)
+make check-docs # verify docs/error-codes.md matches #[contracterror] enums
+make size       # print a WASM size report for all built contracts
+make size-check # fail if any contract WASM exceeds the size limit
+make doc        # build workspace docs with warnings denied
+make audit      # run a security audit of dependencies (cargo-audit)
+make check      # fmt + lint + test + check-docs + size-check + doc (run before pushing)
 make bench      # hot-path benchmarks
-make optimize   # produce size-optimized WASM via the Stellar CLI
+make deploy     # deploy contracts via scripts/deploy.sh
+make e2e        # run the end-to-end test suite
 make clean      # cargo clean
 ```
 
@@ -110,8 +119,8 @@ Before opening a PR, run:
 make check
 ```
 
-This is the same set of checks CI enforces, so passing it locally means your PR
-should pass CI.
+This is intended to track the same set of checks CI enforces in
+`.github/workflows/ci.yml`, so passing it locally means your PR should pass CI.
 
 ---
 

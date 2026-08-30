@@ -1,7 +1,5 @@
 //! Unit tests for Staking contract cap functionality
 
-#![cfg(test)]
-
 extern crate std;
 
 use super::*;

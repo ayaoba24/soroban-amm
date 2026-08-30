@@ -116,7 +116,6 @@ pub type SwapSimulation = SdkSwapSimulation;
 
 // ── Quote types ───────────────────────────────────────────────────────────────
 
-
 /// Result of a `quote_swap_in` call — how much you receive for a known input.
 #[contracttype]
 #[derive(Debug, Clone, PartialEq)]

@@ -7,7 +7,9 @@
 
 use soroban_sdk::{contractclient, Address, Bytes, BytesN, Env};
 
-use crate::types::{LiquidityQuote, PoolInfo, SdkAmmError, SwapInQuote, SwapOutQuote, SwapSimulation};
+use crate::types::{
+    LiquidityQuote, PoolInfo, SdkAmmError, SwapInQuote, SwapOutQuote, SwapSimulation,
+};
 
 // ── Re-export the auto-generated contract client ──────────────────────────────
 
@@ -78,17 +80,9 @@ pub trait AmmPoolInterface {
         data: Bytes,
     ) -> Result<(i128, i128), SdkAmmError>;
 
-    fn get_amount_out(
-        env: Env,
-        token_in: Address,
-        amount_in: i128,
-    ) -> Result<i128, SdkAmmError>;
+    fn get_amount_out(env: Env, token_in: Address, amount_in: i128) -> Result<i128, SdkAmmError>;
 
-    fn get_amount_in(
-        env: Env,
-        token_out: Address,
-        amount_out: i128,
-    ) -> i128;
+    fn get_amount_in(env: Env, token_out: Address, amount_out: i128) -> i128;
 
     fn simulate_swap(
         env: Env,
@@ -107,15 +101,9 @@ pub trait AmmPoolInterface {
 
     fn withdraw_protocol_fees(env: Env) -> Result<(i128, i128), SdkAmmError>;
 
-    fn update_fee(
-        env: Env,
-        new_fee_bps: i128,
-    ) -> Result<(), SdkAmmError>;
+    fn update_fee(env: Env, new_fee_bps: i128) -> Result<(), SdkAmmError>;
 
-    fn update_flash_loan_fee(
-        env: Env,
-        new_fee_bps: i128,
-    ) -> Result<(), SdkAmmError>;
+    fn update_flash_loan_fee(env: Env, new_fee_bps: i128) -> Result<(), SdkAmmError>;
 
     fn set_protocol_fee(
         env: Env,
@@ -132,17 +120,11 @@ pub trait AmmPoolInterface {
         new_admin: Address,
     ) -> Result<(), SdkAmmError>;
 
-    fn accept_admin(
-        env: Env,
-        new_admin: Address,
-    ) -> Result<(), SdkAmmError>;
+    fn accept_admin(env: Env, new_admin: Address) -> Result<(), SdkAmmError>;
 
     fn get_pending_admin(env: Env) -> Option<Address>;
 
-    fn upgrade(
-        env: Env,
-        new_wasm_hash: BytesN<32>,
-    ) -> Result<(), SdkAmmError>;
+    fn upgrade(env: Env, new_wasm_hash: BytesN<32>) -> Result<(), SdkAmmError>;
 }
 
 // ── High-level SDK wrapper ────────────────────────────────────────────────────
@@ -235,33 +217,21 @@ impl<'a> AmmPoolSdk<'a> {
         }
 
         let (reserve_in, reserve_out, token_out) = if *token_in == info.token_a {
-            (
-                info.reserve_a,
-                info.reserve_b,
-                info.token_b.clone(),
-            )
+            (info.reserve_a, info.reserve_b, info.token_b.clone())
         } else if *token_in == info.token_b {
-            (
-                info.reserve_b,
-                info.reserve_a,
-                info.token_a.clone(),
-            )
+            (info.reserve_b, info.reserve_a, info.token_a.clone())
         } else {
             return Err(SdkAmmError::InvalidToken);
         };
 
-        let amount_in_with_fee =
-            amount_in * (10_000 - info.fee_bps);
+        let amount_in_with_fee = amount_in * (10_000 - info.fee_bps);
 
         let amount_out =
-            amount_in_with_fee * reserve_out
-                / (reserve_in * 10_000 + amount_in_with_fee);
+            amount_in_with_fee * reserve_out / (reserve_in * 10_000 + amount_in_with_fee);
 
-        let fee_amount =
-            amount_in * info.fee_bps / 10_000;
+        let fee_amount = amount_in * info.fee_bps / 10_000;
 
-        let spot_price =
-            reserve_out * 1_000_000 / reserve_in;
+        let spot_price = reserve_out * 1_000_000 / reserve_in;
 
         let effective_price = if amount_in > 0 {
             amount_out * 1_000_000 / amount_in
@@ -309,17 +279,9 @@ impl<'a> AmmPoolSdk<'a> {
         }
 
         let (reserve_in, reserve_out, token_in) = if *token_out == info.token_a {
-            (
-                info.reserve_b,
-                info.reserve_a,
-                info.token_b.clone(),
-            )
+            (info.reserve_b, info.reserve_a, info.token_b.clone())
         } else if *token_out == info.token_b {
-            (
-                info.reserve_a,
-                info.reserve_b,
-                info.token_a.clone(),
-            )
+            (info.reserve_a, info.reserve_b, info.token_a.clone())
         } else {
             return Err(SdkAmmError::InvalidToken);
         };
@@ -332,13 +294,11 @@ impl<'a> AmmPoolSdk<'a> {
             0
         } else {
             (reserve_in * amount_out * 10_000)
-                / ((reserve_out - amount_out)
-                    * (10_000 - info.fee_bps))
+                / ((reserve_out - amount_out) * (10_000 - info.fee_bps))
                 + 1
         };
 
-        let fee_amount =
-            required_in * info.fee_bps / 10_000;
+        let fee_amount = required_in * info.fee_bps / 10_000;
 
         Ok(SwapOutQuote {
             token_out: token_out.clone(),
@@ -379,11 +339,9 @@ impl<'a> AmmPoolSdk<'a> {
             }
             raw_shares - MINIMUM_LIQUIDITY
         } else {
-            let shares_a =
-                amount_a * total_shares / reserve_a;
+            let shares_a = amount_a * total_shares / reserve_a;
 
-            let shares_b =
-                amount_b * total_shares / reserve_b;
+            let shares_b = amount_b * total_shares / reserve_b;
 
             shares_a.min(shares_b)
         };
@@ -403,10 +361,7 @@ impl<'a> AmmPoolSdk<'a> {
     }
 
     /// Estimate tokens returned for burning `shares` LP tokens.
-    pub fn quote_remove_liquidity(
-        &self,
-        shares: i128,
-    ) -> Result<LiquidityQuote, SdkAmmError> {
+    pub fn quote_remove_liquidity(&self, shares: i128) -> Result<LiquidityQuote, SdkAmmError> {
         if shares <= 0 {
             return Err(SdkAmmError::ZeroAmount);
         }
@@ -417,11 +372,9 @@ impl<'a> AmmPoolSdk<'a> {
             return Err(SdkAmmError::EmptyPool);
         }
 
-        let amount_a =
-            shares * info.reserve_a / info.total_shares;
+        let amount_a = shares * info.reserve_a / info.total_shares;
 
-        let amount_b =
-            shares * info.reserve_b / info.total_shares;
+        let amount_b = shares * info.reserve_b / info.total_shares;
 
         let pool_ratio = if info.reserve_a > 0 {
             info.reserve_b * 1_000_000 / info.reserve_a
@@ -448,13 +401,10 @@ impl<'a> AmmPoolSdk<'a> {
         min_out: i128,
         deadline: u64,
     ) -> Result<i128, SdkAmmError> {
-        unwrap_contract_result(self.client.try_swap(
-            trader,
-            token_in,
-            &amount_in,
-            &min_out,
-            &deadline,
-        ))
+        unwrap_contract_result(
+            self.client
+                .try_swap(trader, token_in, &amount_in, &min_out, &deadline),
+        )
     }
 
     /// Execute a swap targeting an exact output amount.
@@ -502,13 +452,10 @@ impl<'a> AmmPoolSdk<'a> {
         min_b: i128,
         deadline: u64,
     ) -> Result<(i128, i128), SdkAmmError> {
-        unwrap_contract_result(self.client.try_remove_liquidity(
-            provider,
-            &shares,
-            &min_a,
-            &min_b,
-            &deadline,
-        ))
+        unwrap_contract_result(
+            self.client
+                .try_remove_liquidity(provider, &shares, &min_a, &min_b, &deadline),
+        )
     }
 
     /// Issue a flash loan.
@@ -519,12 +466,10 @@ impl<'a> AmmPoolSdk<'a> {
         amount_b: i128,
         data: Bytes,
     ) -> Result<(i128, i128), SdkAmmError> {
-        unwrap_contract_result(self.client.try_flash_loan(
-            receiver,
-            &amount_a,
-            &amount_b,
-            &data,
-        ))
+        unwrap_contract_result(
+            self.client
+                .try_flash_loan(receiver, &amount_a, &amount_b, &data),
+        )
     }
 }
 
